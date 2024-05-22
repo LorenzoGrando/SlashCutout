@@ -9,15 +9,22 @@ Shader "Custom/SlashCutout"
         [Header(Cut)]
         _DiagonalLength ("  Length", Range(0,1)) = 1
         _DiagonalFalloff ("  Falloff", Float) = 1
-        _DiagonalAsymmetry("    AsymmetryStrength", Range(0,1)) = 0  
+        _DiagonalAsymmetry("    Asymmetry Strength", Range(0,1)) = 0  
         _CutCenterWidth ("   Center Width", Float) = 1
         _CutSlimness ("    Slimness", Range(0.01,1)) = 1
         _WaveDistortion("   Horizontal Distortion Amount", Range(0,1)) = 1
-        _DistortionStrength ("  Distoriton Strength", Float) = 1
+        _DistortionStrength ("  Distortion Strength", Float) = 1
         
         [Header(Edge)]
         _EdgeColor ("   Color", Color) = (1,1,1,1)
         _EdgeStrength ("    Strength", Range(0.01,1)) = 1
+        
+        [Header(Lightning Effect)]
+        _AngleOffset (" Voronoi Angle Offset", Float) = 1
+        _CellDensity ("  Voronoi Cell Density", Float) = 1
+        _LightningStrength ("    Strength", Range(0,1)) = 1
+        _LightningWidth (" Width", Float) = 1
+        _LightningSpeed (" Speed", Range(0.001, 1)) = 1
         
         [Header(Lighting)]
         _Smoothness ("  Smoothness", Range(0,1)) = 0.5

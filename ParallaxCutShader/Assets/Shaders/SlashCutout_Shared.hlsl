@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"        
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Assets/Shaders/Utilities/NoiseFunctions.hlsl"
 
 struct Attributes
 {
@@ -38,6 +39,12 @@ float _DistortionStrength;
 
 float4 _EdgeColor;
 float _EdgeStrength;
+
+float _AngleOffset;
+float _CellDensity;
+float _LightningStrength;
+float _LightningSpeed;
+float _LightningWidth;
 
 float _Smoothness;
 float4 _EmissionColor;
@@ -92,6 +99,17 @@ float4 CalculateLighting(InputData lightingData, SurfaceData surfaceData)
 
     return UniversalFragmentBlinnPhong(lightingData, surfaceData);
 }
+
+float CalculateLightningEffectMask(Varyings i)
+{
+    i.uv.x += _SinTime * _LightningSpeed;
+    i.uv.y += _CosTime * _LightningSpeed;
+    float angle = _AngleOffset + 15 * (abs(_SinTime) * _LightningSpeed);
+    float mainMask = Voronoi(i.uv, angle, _CellDensity);
+    float minorMask = Voronoi(i.uv, angle, _CellDensity * 2);
+    float blend = max(mainMask, minorMask * 0.5);
+    return pow(blend, _LightningWidth) * _LightningStrength;;
+}
             
 float4 frag(Varyings i) : SV_Target
 {
@@ -103,21 +121,24 @@ float4 frag(Varyings i) : SV_Target
     float flippedWeight = (abs((abs((i.uv.x) - 1)) - (i.uv.y))  * _DiagonalFalloff) + (d * (10 * abs(1-_DiagonalLength * abs(1-_DiagonalAsymmetry))));
     diagonalWeight = min(flippedWeight, diagonalWeight) * _CutSlimness;
     
-    
 
     float color = d * (diagonalWeight - (distortionWave * _DistortionStrength * abs(1-d)));
-    //return float4((color).xxx, 1);
-
-
+    float lightningMask = saturate(CalculateLightningEffectMask(i));
+    
     color = abs(1-saturate(color));
+    float clipColor =  max(color,lightningMask) - _Cutoff;;
     color = color - _Cutoff;
     //early exit
-    clip(color - 0.1);
+    clip(clipColor - 0.1);
 
     float edgeTransition = smoothstep(frac(pow(color.xxx, 0.25)), 1, _EdgeStrength);
     
     float4 textureColor = SAMPLE_TEXTURE2D(_BaseTexture, sampler_BaseTexture, i.positionNDC.xy/i.positionNDC.w);
     float4 finalColor = lerp(_BaseColor * textureColor, _EdgeColor, edgeTransition);
+    
+    float4 lightningColor = lerp(_EdgeColor, _BaseColor, lightningMask);
+    lightningColor = lightningColor / (2 - (1 * abs(_SinTime * _LightningSpeed)));
+    finalColor = lerp(finalColor, lightningColor, step(color - lightningMask, lightningMask));
 
     InputData lightData = SetupLightingData(i.positionWS, i.normalWS);
     SurfaceData surfData = SetupSurfaceData(finalColor.xyz, 1, finalColor.xyz, 1);
