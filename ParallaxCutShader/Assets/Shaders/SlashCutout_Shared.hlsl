@@ -118,6 +118,7 @@ float4 frag(Varyings i) : SV_Target
     float distortionWave = max(triWave, offsetTriWave);
     float d = pow(abs(0.5 - i.uv.x) + abs(0.5 - i.uv.y), _CutCenterWidth);
     float diagonalWeight = abs((i.uv.x) - i.uv.y)  * _DiagonalFalloff + (d * (10 * abs(1-_DiagonalLength)));
+    
     float flippedWeight = (abs((abs((i.uv.x) - 1)) - (i.uv.y))  * _DiagonalFalloff) + (d * (10 * abs(1-_DiagonalLength * abs(1-_DiagonalAsymmetry))));
     diagonalWeight = min(flippedWeight, diagonalWeight) * _CutSlimness;
     
